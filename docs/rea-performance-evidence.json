@@ -1,0 +1,29 @@
+{
+  "description": "Focused excerpt from a retained REA observation, not the complete Evidence record",
+  "source_evidence_id": "ev_b572b28e7ffb11e6e0559659d02c2c39928a32fca05f6ffb3df614e450e4728f",
+  "authority": "shipped-artifact",
+  "artifact": "b11887 CUDA12.8 release libllama.so",
+  "artifact_sha256": "7225f693b11d2c1a36ae6b94e9b027c0dc39001e3cf32ac04615b735621c5fee",
+  "operation": "inspect_with_objdump",
+  "parameters": {"operation": "symbols", "follow_debug_links": false},
+  "symbol_line": "000000000035dee0 l     F .text\t00000000000001cb              _ZL29llama_sampler_penalties_applyP13llama_samplerP22llama_token_data_array",
+  "limitations": [
+    "Static symbol evidence establishes function identity, not runtime hotness.",
+    "The provider executable version was not probed.",
+    "Matching pre/post digests do not prove the exact bytes consumed during inspection."
+  ],
+  "additional_observation": {
+    "method": "Direct GNU objdump disassembly of the REA-identified function",
+    "command": "objdump -d -C --start-address=0x35dee0 --stop-address=0x35e0ab libllama.so",
+    "instructions": [
+      {"address": "0x35e01b", "instruction": "div %rbp"},
+      {"address": "0x35e04c", "instruction": "div %rbp"}
+    ],
+    "interpretation": "The shipped candidate loop computes hash bucket indices with integer division and follows hash-chain pointers. Runtime cost was measured independently with the sampler benchmark."
+  },
+  "controlled_local_builds": {
+    "source_revision": "6050b467c07a95c7b87debd4ddac2f8ba8d9b807",
+    "baseline_libllama_sha256": "9020bebe9ac8f3d44e11edddde55c491e2e5ed7572f963d9e5646e2aa2262e96",
+    "optimized_libllama_sha256": "e9eb726028ef76756f987661fd495ddd4beec0e293ef3d16bc28857626ff9299"
+  }
+}

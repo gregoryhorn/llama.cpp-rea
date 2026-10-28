@@ -2872,6 +2872,10 @@ struct llama_sampler_penalties : public llama_sampler_backend {
     // a frequency map to count token occurrences
     std::unordered_map<llama_token, int> token_count;
 
+    // CPU lookup scratch: populated and cleared sparsely from token_count.
+    // This is not sampler state and does not need to be cloned or reset.
+    std::vector<int> cpu_counts;
+
     // backend graph inputs
     ggml_tensor * inp_token_ids = nullptr;
     ggml_tensor * inp_counts    = nullptr;
@@ -2961,14 +2965,33 @@ static void llama_sampler_penalties_apply(struct llama_sampler * smpl, llama_tok
         return;
     }
 
-    // Apply frequency and presence penalties to the cur_p
+    // Candidate arrays need not be ordered by token ID (or contain the full
+    // vocabulary). Index counts, not candidates, to preserve that API contract.
+    if (ctx->cpu_counts.empty() && ctx->n_vocab > 0) {
+        ctx->cpu_counts.resize(ctx->n_vocab, 0);
+    }
+    for (const auto & entry : ctx->token_count) {
+        if (entry.first >= 0 && (size_t) entry.first < ctx->cpu_counts.size()) {
+            ctx->cpu_counts[entry.first] = entry.second;
+        }
+    }
+
+    // Avoid one hash lookup per vocabulary entry. The common path is a flat
+    // array read; retain map semantics for caller-supplied out-of-range IDs.
     for (size_t i = 0; i < cur_p->size; ++i) {
-        const auto token_iter = ctx->token_count.find(cur_p->data[i].id);
-        if (token_iter == ctx->token_count.end()) {
+        const auto id = cur_p->data[i].id;
+        int count = 0;
+        if (id >= 0 && (size_t) id < ctx->cpu_counts.size()) {
+            count = ctx->cpu_counts[id];
+        } else {
+            const auto it = ctx->token_count.find(id);
+            if (it != ctx->token_count.end()) {
+                count = it->second;
+            }
+        }
+        if (count == 0) {
             continue;
         }
-
-        const int count = token_iter->second;
 
         assert(count > 0 && count <= ctx->penalty_last_n);
 
@@ -2981,6 +3004,12 @@ static void llama_sampler_penalties_apply(struct llama_sampler * smpl, llama_tok
         }
 
         cur_p->data[i].logit -= float(count) * ctx->penalty_freq + float(count > 0) * ctx->penalty_present;
+    }
+
+    for (const auto & entry : ctx->token_count) {
+        if (entry.first >= 0 && (size_t) entry.first < ctx->cpu_counts.size()) {
+            ctx->cpu_counts[entry.first] = 0;
+        }
     }
 
     cur_p->sorted = false;

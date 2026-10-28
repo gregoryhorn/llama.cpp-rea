@@ -1,4 +1,14 @@
-# llama.cpp
+# llama.cpp — REA performance fork
+
+This experimental branch contains a measured CPU sampling optimization based on
+upstream **b11887**. On the tested RTX 3090/Qwen3.5 MoE setup it improved median
+decode throughput by **6.1–7.1%**, with identical generated token IDs across all
+33 controlled completions. It reuses upstream inference and CUDA kernels; it is
+not a new engine or a universal speedup claim.
+
+See [the benchmark report, reproduction steps and limitations](docs/rea-performance.md)
+and [the REA shipped-binary evidence excerpt](docs/rea-performance-evidence.json).
+The upstream project documentation follows.
 
 ![llama](https://raw.githubusercontent.com/ggml-org/llama.brand/refs/heads/master/cover/llama-cpp/cover-llama-cpp-dark.svg)
 
