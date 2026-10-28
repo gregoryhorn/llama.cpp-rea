@@ -8,6 +8,12 @@ not a new engine or a universal speedup claim.
 
 See [the benchmark report, reproduction steps and limitations](docs/rea-performance.md)
 and [the REA shipped-binary evidence excerpt](docs/rea-performance-evidence.json).
+
+[Blackfrost Qwen3.8 27B at 150K context](docs/blackfrost-150k.md) was also tested:
+the custom CPU change alone showed no meaningful speedup there, while existing
+MTP produced substantial workload-dependent gains. That report includes the
+publisher guidance, raw measurements and a real Hermes testing-profile tool smoke.
+
 The upstream project documentation follows.
 
 ![llama](https://raw.githubusercontent.com/ggml-org/llama.brand/refs/heads/master/cover/llama-cpp/cover-llama-cpp-dark.svg)
